@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ai Vercel Link Creator</title>
+<style>
+:root{ --bg:#111; --card:#1e1e1e; --accent:#e53935; --muted:#cfcfcf; }
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,#0b0b0b,#151515);color:var(--muted);display:flex;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px;}
+.container{width:420px;background:var(--card);padding:22px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.6);}
+h1{color:#fff;margin:0 0 12px;font-size:20px}
+label{display:block;margin-top:12px;color:#ddd;font-weight:600}
+input[type="url"], input[type="number"], textarea, input[readonly]{
+  width:100%;padding:12px;border-radius:10px;border:1px solid #2a2a2a;background:#0f0f0f;color:#eee;margin-top:6px;box-sizing:border-box;
+}
+textarea{min-height:70px;resize:vertical}
+button[type="submit"], .copy{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;color:#fff;cursor:pointer;font-weight:700;margin-top:12px}
+.copy{background:#2196f3;margin-left:8px}
+.result{background:#0b2f1a;padding:12px;border-radius:10px;margin-top:12px;color:#c8f5d6;display:flex;gap:8px;align-items:center}
+.error{background:#3a1a1a;padding:10px;border-radius:8px;color:#ffbdbd;margin-top:10px}
+.preview{margin-top:12px;background:#0f0f0f;padding:10px;border-radius:8px;text-align:left;color:#ddd}
+.preview img{max-width:100%;border-radius:8px;display:block;margin-bottom:8px}
+.small{font-size:12px;color:#9b9b9b;margin-top:6px}
+.footer{margin-top:12px;font-size:12px;color:#7a7a7a}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔗 Link Creator Tool</h1>
+    <form id="linkForm">
+    <label>Image URL:</label>
+    <input type="url" name="image" placeholder="https://example.com/image.jpg">
+
+    <label>Destination URL:</label>
+    <input type="url" name="url" placeholder="http:// or https://" required>
+
+    <label>Description:</label>
+    <textarea name="description" placeholder=""></textarea>
+     
+    <label>Title:</label>
+    <textarea name="title" placeholder=""></textarea>
+
+    <label>Redirect Timer (seconds):</label>
+    <input type="number" name="timer" min="0" value="0">
+
+    <button type="submit">Create Link</button>
+  </form>
+
+  <div class="result" id="resultBox" style="display:none">
+    <input type="text" id="shortlink" readonly>
+    <button class="copy" onclick="copyLink()">Copy</button>
+  </div>
+
+  <div class="preview" id="previewBox" style="display:none">
+    <strong>Preview</strong>
+    <div id="pimg"></div>
+    <div id="pdesc"></div>
+    <div class="small">When you share the short link on Facebook it will show image &amp; description as preview (Facebook may cache preview).</div>
+  </div>
+
+  <div class="footer"><code>Powered by Vercel</code></div>
+</div>
+
+<script>
+const form = document.getElementById('linkForm');
+const preview = document.getElementById('previewBox');
+const pimg = document.getElementById('pimg');
+const pdesc = document.getElementById('pdesc');
+const resultBox = document.getElementById('resultBox');
+const shortlinkInput = document.getElementById('shortlink');
+
+// Handle preview
+form.addEventListener('change', ()=>{
+    const img = form.querySelector('input[name=image]').value;
+    const desc = form.querySelector('textarea[name=description]').value;
+
+    if(img){
+        pimg.innerHTML = '<img src="'+img+'" alt="preview">';
+        preview.style.display = 'block';
+    } else {
+        pimg.innerHTML = '';
+    }
+    pdesc.textContent = desc;
+    if(!desc && !img) preview.style.display = 'none';
+});
+
+// Handle form submit
+form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+
+    const data = {
+        image: form.image.value,
+        url: form.url.value,
+        description: form.description.value,
+        title: form.title.value,
+        timer: form.timer.value
+    };
+
+    try {
+        const res = await fetch("/api/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        if(json.shortUrl){
+            shortlinkInput.value = json.shortUrl;
+            resultBox.style.display = "flex";
+        }
+    } catch (err) {
+        alert("Error creating link");
+        console.error(err);
+    }
+});
+
+function copyLink(){
+    shortlinkInput.select();
+    shortlinkInput.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(shortlinkInput.value).then(()=>{ 
+        alert('Copied to clipboard');
+    });
+}
+</script>
+</body>
+</html>
